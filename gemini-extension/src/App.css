@@ -9,57 +9,58 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
-    Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  font-family: 'Roboto', sans-serif;
   color: var(--text);
-  background-color: var(--bg);
+  background-image: linear-gradient(to top, #0c0d10, #1a1b22);
   font-size: 16px;
-  width: 320px;
+  min-height: 100vh;
 }
 
-.popup-container {
-  background-color: var(--elev-1);
+.side-panel {
   padding: 16px;
   border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 h1 {
-  font-size: 20px;
-  color: var(--accent);
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--text);
   text-align: center;
+  margin: 0;
 }
 
 textarea {
-  width: calc(100% - 32px);
-  max-width: calc(100% - 32px);
   background-color: var(--elev-2);
   color: var(--text);
   padding: 16px;
   border-radius: 16px;
   border: 1px solid var(--border);
   outline: none;
-  margin-bottom: 10px;
+  resize: vertical;
 }
 
 button {
-  background: var(--accent);
+  background-image: linear-gradient(to right, #8ab4ff, #a6c1ff);
   color: var(--bg);
-  font-weight: bold;
-  border-radius: 8px;
+  font-weight: 500;
+  font-size: 16px;
+  border-radius: 99px;
   border: none;
-  min-width: 100px;
-  padding: 10px;
-  margin: 16px 0;
+  padding: 12px 24px;
   cursor: pointer;
-  width: 100%;
+  transition: all 0.2s ease-in-out;
 }
 
-button[disabled] {
-  background: var(--elev-2);
-  color: var(--muted);
+button:hover {
+  box-shadow: 0 0 10px rgba(138, 180, 255, 0.5);
 }
 
-.text {
+.card {
   background-color: var(--elev-2);
   padding: 16px;
   border-radius: 16px;
