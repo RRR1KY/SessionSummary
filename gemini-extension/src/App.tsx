@@ -29,7 +29,10 @@ export default function App(): ReactElement {
   }, []);
 
   const handleDownload = () => {
+    console.log('handleDownload called');
+    console.log('navigator.userActivation.isActive:', navigator.userActivation.isActive);
     if (navigator.userActivation.isActive) {
+      setAvailable('downloading');
       LanguageModel.create({
         ...CORE_MODEL_OPTIONS,
         monitor(m) {
@@ -37,12 +40,19 @@ export default function App(): ReactElement {
             setModelDownloadProgress(e.loaded * 100);
           });
         },
-      }).then((model) => {
-        setModel(model);
-        setAvailable('available');
-      });
+      })
+        .then((model) => {
+          setModel(model);
+          setAvailable('available');
+        })
+        .catch((error) => {
+          console.error('Error creating language model:', error);
+          setError('Failed to download model. See console for details.');
+        });
     }
   };
+
+
 
   const handlePromptChange = (
     event: React.ChangeEvent<HTMLTextAreaElement>
@@ -88,13 +98,23 @@ export default function App(): ReactElement {
       return <div>Local model unavailable!</div>;
 
     case 'downloading':
-      return <div>Download Progress + ${localModelDownloadProgress}%</div>;
+      return (
+        <div className="download-container">
+          <h3>Downloading Model</h3>
+          <div className="progress-bar-container">
+            <div
+              className="progress-bar"
+              style={{ width: `${localModelDownloadProgress}%` }}
+            ></div>
+          </div>
+          <p>{Math.round(localModelDownloadProgress)}%</p>
+        </div>
+      );
     case 'downloadable':
       return (
         <button
           id='send-button'
           onClick={handleDownload}
-          disabled={!prompt.trim()}
         >
           Download Model
         </button>
@@ -119,6 +139,7 @@ export default function App(): ReactElement {
           >
             Send
           </button>
+
           {loading && (
             <div id='loading' className='card'>
               <span className='blink'>...</span>
