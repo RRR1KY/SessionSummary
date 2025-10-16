@@ -1,6 +1,7 @@
 import { useState, useEffect, type ReactElement } from 'react';
 import './App.css';
 import { CORE_MODEL_OPTIONS } from './config/model-options';
+import { generateGroupingPlanAndSummary, executeGrouping } from './handler/tab-grouping';
 
 export default function App(): ReactElement {
   const [prompt, setPrompt] = useState('');
@@ -13,6 +14,8 @@ export default function App(): ReactElement {
     undefined
   );
   const [localModelDownloadProgress, setModelDownloadProgress] = useState(0);
+  const [groupingPlan, setGroupingPlan] = useState<Map<string, number[]> | null>(null);
+  const [summary, setSummary] = useState<string | null>(null);
 
   useEffect(() => {
     LanguageModel.availability(CORE_MODEL_OPTIONS).then((val) => {
@@ -60,38 +63,45 @@ export default function App(): ReactElement {
     setPrompt(event.target.value);
   };
 
-  const handleSend = async () => {
-    if (localModelInstance == undefined) {
-      console.error('Local model not available');
-      return;
-    }
 
-    console.log('Sending prompt to local model');
+
+  const handleGroupTabs = async () => {
+    if (!localModelInstance) return;
+
     setLoading(true);
-    setResponse('');
     setError('');
+    setResponse('');
 
-    const stream = localModelInstance.promptStreaming(prompt);
-    const reader = stream.getReader();
-    let fullResponse = '';
-
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) {
-        break;
+    try {
+      const result = await generateGroupingPlanAndSummary(localModelInstance, prompt);
+      if (result) {
+        setGroupingPlan(result.groupingPlan);
+        setSummary(result.summary);
+      } else {
+        setError('Could not generate a grouping plan.');
       }
-      fullResponse += value;
-      setResponse(fullResponse);
+    } catch (e) {
+      setError('An error occurred while generating the grouping plan.');
+      console.error(e);
+    } finally {
       setLoading(false);
     }
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      handleSend();
+  const handleConfirmGrouping = async () => {
+    if (groupingPlan) {
+      await executeGrouping(groupingPlan);
+      setGroupingPlan(null);
+      setSummary(null);
     }
   };
+
+  const handleCancelGrouping = () => {
+    setGroupingPlan(null);
+    setSummary(null);
+  };
+
+
 
   switch (localModelAvailable) {
     case 'unavailable':
@@ -130,15 +140,8 @@ export default function App(): ReactElement {
             rows={5}
             value={prompt}
             onChange={handlePromptChange}
-            onKeyDown={handleKeyDown}
           ></textarea>
-          <button
-            id='send-button'
-            onClick={handleSend}
-            disabled={!prompt.trim()}
-          >
-            Send
-          </button>
+          <button onClick={handleGroupTabs}>Group Tabs</button>
 
           {loading && (
             <div id='loading' className='card'>
@@ -150,9 +153,27 @@ export default function App(): ReactElement {
               {error}
             </div>
           )}
-          {response && (
+          {response && !groupingPlan && (
             <div id='response-container' className='card'>
               {response}
+            </div>
+          )}
+
+          {groupingPlan && summary && (
+            <div className="card">
+              <h3>Confirm Tab Grouping</h3>
+              <p>The following summary has been generated and your tabs will be grouped into the following categories. Do you want to proceed?</p>
+              <p>{summary}</p>
+              <h4>Categories</h4>
+              <ul>
+                {Array.from(groupingPlan.keys()).map(category => (
+                  <li key={category}>
+                    <strong>{category}</strong>: {groupingPlan.get(category)?.length} tabs
+                  </li>
+                ))}
+              </ul>
+              <button onClick={handleConfirmGrouping}>Confirm</button>
+              <button onClick={handleCancelGrouping}>Cancel</button>
             </div>
           )}
         </div>
